@@ -115,7 +115,20 @@ func apiErrorDefined(ctx *context.Context, err *namedError) {
 }
 
 func apiUnauthorizedError(ctx *context.Context) {
-	ctx.Resp.Header().Add("WWW-Authenticate", `Bearer realm="`+setting.AppURL+`v2/token",service="container_registry",scope="*"`)
+  log.Debug("Request looks like: %v", ctx.Req)
+  scheme := ctx.Req.Header.Get("X-Forwarded-Scheme")
+	if scheme == "" {
+    scheme = ctx.Req.URL.Scheme
+	}
+	host := ctx.Req.Header.Get("X-Forwarded-Host")
+	if host == "" {
+    host = ctx.Req.URL.Host
+	}
+	urlCopy := url.URL{
+		Scheme: scheme,
+		Host:   host,
+	}
+	ctx.Resp.Header().Add("WWW-Authenticate", `Bearer realm="`+urlCopy.String()+`/v2/token",service="container_registry",scope="*"`)
 	apiErrorDefined(ctx, errUnauthorized)
 }
 
